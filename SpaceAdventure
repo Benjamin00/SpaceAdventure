@@ -1,0 +1,754 @@
+#SPACE ADVENTURE
+#Benjamin Hill
+.include "macro_file.asm"
+.data
+hasLight:	.word -1 #Need to see in the dark cave
+hasGun:		.word -1 #Need to fight off cave monster
+hasBattery:	.word -1 #Need to charge the battery 
+hasWrench:	.word -1 #Not needed ofor anything
+stayCount:	.word 0
+lightON:	.word -1
+friend: 	.word -1
+batteryCharged:	.word -1
+#optionsCMD:	.ascii "op\n"
+		.align 2
+userInput: 	.space 24
+.text
+main:
+	#jal resetValues
+	### INTRODUCTION  ##
+	intro
+	intro2
+	print_str("")
+	print_ship
+	print_str("You find yourself in a daze. As smoke fills the air around you, you begin to regain your senses. \n")
+	print_str("As you look over the panel of flashing lights in front of you, you remember where you are.... \n")
+	print_str("You're the captain of the 'Orion 435', a top of the line spaceship. Your ship crashed on the planet Yumi 4.9 \n")
+	print_str("On the horizon you see a purple storm building, you see massive radioactive readings on your sensors\n")
+	print_str("Your ships computer says your energy reactor has failed and needs a jump start.\n")
+	print_str("You need to find an energy source to get off this planet.\n")
+
+##STORY###
+shipOptions:	
+	jal promptForInput
+	jal getInput
+	la $a1, userInput	#save the user input	
+	move $t7, $a1
+	#print_add($t7)		#Used for testing
+	chk_str("op\n",$t7)	#check if user input is "op"
+	beqz $v0, userOptions	#if zero, go to testbranch
+	chk_str("exit\n",$t7)	#check if user input is "exit"
+	beqz $v0, LeftShip	#if zero, go to testbranch
+	chk_str("stay\n",$t7)	#check if user input is "stay"
+	beqz $v0, StayShip	#if zero, go to testbranch
+	print_str("Invalid Input\n")
+	j shipOptions
+## LEAVE THE SHIP CHOICE ##
+LeftShip:
+	choiceMade
+ 	print_str("You step out of the ship, remembering to grab your helmet before leaving\n")
+ 	print_str("You know that your ships battery needs charge, so you scan the landscape\n")
+ 	print_str("Your reading say that there is an energy signature up ahead in what appears to be a cave.\n")
+  leftRet:
+  	jal promptForInput
+	jal getInput
+	la $a1, userInput		#save the user input	
+	move $t7, $a1
+  	chk_str("op\n",$t7)		#check if user input is "op"
+	beqz $v0, userOptionsC		#if zero, go to testbranch
+  	chk_str("enter cave\n",$t7)	
+	beqz $v0, EnterCave		#if zero, go to the death in the ship	
+   	chk_str("return to ship\n",$t7)	#check if user input is "op"
+	beqz $v0, stayDeath		#if zero, go to testbranch
+	print_str("Invalid Input\n")
+	j leftRet
+EnterCave:
+	choiceMade
+	print_str("You step into the cave. Your energy signiature reader starts blipping more frequently \n")
+	print_str("It's pitch black in the cave, but you think you see a faint flickering near the back of this large cavern\n")
+   enterCaveRet:	
+ 	jal promptForInput
+	jal getInput
+	la $a1, userInput	#save the user input	
+	move $t7, $a1
+	chk_str("op\n",$t7)		#check if user input is "op"
+	beqz $v0, userOptionsInCave1
+	chk_str("return to ship\n",$t7)
+	beqz $v0, stayDeath
+	chk_str("use flashlight\n",$t7)
+	beqz $v0, flashlightOn
+	chk_str("use wrench\n", $t7)
+	beqz $v0, invalidCave1
+	chk_str("use battery\n", $t7)
+	beqz $v0, invalidCave1
+	chk_str("use gun\n", $t7)
+	beqz $v0, invalidCave1
+	chk_str("continue\n",$t7)
+	beqz $v0, ContinueCave
+	print_str("Invalid Input\n")
+	j enterCaveRet
+	
+ContinueCave:
+	choiceMade
+	lw $t8, lightON
+	bltz $t8, slipDeath	#check if the flashlight is off, if true, death
+	choiceMade
+	print_str("Your flashlight floods the room. You see how wet the walls and floor of the cave are, and are glad you remembered to bring it\n")
+	print_str("The light you saw earlier came from a small room to your left. In it you can see stacks of what look like gold bars\n")
+	print_str("To the right is a long dark tunnel, but your sensors say that's where the energy signals are coming from\n")
+  contCaveRet:	
+ 	jal promptForInput
+	jal getInput
+	la $a1, userInput		#save the user input	
+	move $t7, $a1
+	chk_str("op\n",$t7)		#check if user input is "op"
+	beqz $v0, userOptionsInCave2
+	chk_str("go left\n",$t7)
+	beqz $v0, trapcaveDeath		#if the user goes left, they die
+	chk_str("go right\n",$t7)
+	beqz $v0, tunnel		#go down the tunnel	
+	chk_str("use flashlight\n",$t7)
+	beqz $v0, invalidCave2
+	chk_str("use wrench\n", $t7)
+	beqz $v0, invalidCave2
+	chk_str("use battery\n", $t7)
+	bgezal $v0, invalidCave2
+	chk_str("use gun\n", $t7)
+	bgezal $v0, invalidCave2
+	print_str("Invalid Input\n")
+	j contCaveRet			#if doesn't branch, jump back up to prompt the user
+	
+		
+tunnel: #User enters the tunnel on the right 
+	choiceMade
+	print_str("You decide that the current mission is too urgent, and that you need to focus on getting the power needed to start your ship\n")
+	print_str("You shine your flashlight on the path ahead, trying to avoid slipping on the smooth rocks beneath your feet as you decend deeper into the cave\n")
+	print_str("Suddenly, the cave starts to tremor. It feel like an Earthquake!\n")
+	print_str("You fall. You hear something break. Your hands reaching out to grab something. but there is nothing to hold on to.\n")
+	print_str("You find yourself sliding down the path, picking up speed as the slope of the path continues to get steeper\n")
+	print_str("You see ahead of you two branching tunnels. There is a sign above the left one that you can't quite make out. But the other one has the universal symbol for danger: a Kervasians Skull and bones\n")
+   tunnelRet:	
+	jal promptForInput
+	jal getInput
+	la $a1, userInput		#save the user input	
+	move $t7, $a1
+	chk_str("op\n",$t7)			#check if user input is "op"
+	beqz $v0, userOptionsTunnel
+	chk_str("do nothing\n",$t7)
+	beqz $v0, slideDeath
+	chk_str("slide left\n",$t7)
+	beqz $v0, slideLeft	
+	chk_str("slide right\n",$t7)
+	beqz $v0, slideRight2
+	print_str("Invalid Input\n")	
+	j tunnelRet
+##user goes through tunnel on the left	
+slideLeft:
+	choiceMade
+	print_str("You slide to the left, hoping that you made the safer choice.\n")
+	print_str("The tunnel tapers off and you slow down, eventually coming to a stop. You have no idea how long you slid for.\n")
+	print_str("It is completely dark around you, you search around looking for your flashlight, and find it nearby\n")
+	print_str("You turn on the flashlight and look around\n")
+	print_str("You find yourself on looking at unstable ground, the earthquake must have shifted some of the rocks around. It continues rumbling as you make your way forward\n")
+	print_str("Rocks start falling from the ceiling, and the ground continues to break\n")
+    slideLeftRet:
+    	jal promptForInput
+	jal getInput
+	la $a1, userInput		#save the user input	
+	move $t7, $a1
+	chk_str("op\n",$t7)			#check if user input is "op"
+	beqz $v0, userOptionsTunnelLeft
+	chk_str("run\n",$t7)
+	beqz $v0, runDeath			#if you run you die
+	chk_str("walk\n",$t7)
+	beqz $v0, walkTunnel			#if you walk you're fine
+	chk_str("use wrench\n",$t7)		#cant use the wrench
+	beqz $v0, invalidTunnelLeft
+	chk_str("use battery\n",$t7)		#cannot use battery
+	beqz $v0, invalidTunnelLeft
+	chk_str("use gun\n",$t7)		#cant use the gun
+	beqz $v0, invalidTunnelLeft
+	chk_str("use light\n",$t7)		#cant use the flashlight
+	beqz $v0, invalidTunnelLeft
+	print_str("Invalid Input\n")
+	j slideLeftRet
+
+walkTunnel:
+	print_str("You step carefully, but you make it through the cavern\n")
+	j uranium
+		
+##User goes into the tunnel on the right
+slideRight2:
+	choiceMade
+	print_str("You slide to the right, hoping that nothing too dangerous awaits you at the end of the tunnel.\n")
+	print_str("The tunnel tapers off and you slow down, eventually coming to a stop. You have no idea how long you slid for.\n")
+	print_str("It is completely dark around you, you search around looking for your flashlight, and find it nearby\n")
+   slideRightRet2:
+   	jal promptForInput
+	jal getInput
+	la $a1, userInput
+	move $t7, $a1
+	chk_str("op\n",$t7)				#check if user input is "op"
+	beqz $v0,userOptionsTunnelRight2
+	chk_str("turn flashlight on\n",$t7)		
+	beqz $v0, alienEncounter			#See the alien in the light
+	chk_str("sit quietly\n",$t7)
+	beqz $v0, alienQuiet				#Sit quietly
+	print_str("Invalid Input\n")
+	j slideRightRet2
+	
+alienEncounter:
+	choiceMade
+	print_str("You turn the flashlight on and see the face of an ugly, montrous alien!\n")
+	print_monster
+	print_str("You are paralyzed with fear\n")
+  alienEncounterRet:	
+  	jal promptForInput
+	jal getInput
+	la $a1, userInput
+	move $t7, $a1
+	chk_str("op\n",$t7)			#check if user input is "op"
+	beqz $v0, userOptionsAlien
+	chk_str("use wrench\n",$t7)		#using the wrench angers the alien, it kills you
+	beqz $v0, invalidAlien
+	chk_str("use battery\n",$t7)		#cannot use battery
+	beqz $v0, invalidAlien
+	chk_str("use gun\n",$t7)		#can shoot the alien, it dies
+	beqz $v0, alienShoot
+	chk_str("use light\n",$t7)		#turn light off, die in the dark
+	beqz $v0, alienhDeath
+	chk_str("talk\n",$t7)			#talk to the alien, makes friends
+	beqz $v0, alienHi
+	chk_str("run\n",$t7)			#run, die
+	beqz $v0, alienrDeath	
+	print_str("Invalid Input\n")
+	j alienEncounterRet
+alienHi:
+	choiceMade
+	print_str("'Um... Hi?' you say unconfidently\n")
+	print_str("The alien just stares back at you \n")
+	print_str("'Listen, I'm not here to bother you or anything, I just to fix my ship, and I saw there might have been some uranium down here'\n")
+	print_str("The alien cocks its head\n")
+	print_str("'Look, I know its kind of weird to have someone come down here unannounced, but I'd really appreciate it if you'd just let me continue on my way'\n")
+	print_str("The alien shrugs and backs away a little bit, it looks like a Kervasian, similar to the skull you saw at the top of this tunnel\n")
+	print_str("It has a body that looks like a purple lion, with a head that looks like the predator\n")
+	print_str("You look down at your wrist, but realize the computer must have broken in the fall\n")
+	print_str("Hey, you wouldn't be able to show me the way would you? Isn't there some uranium nearby?\n")
+	print_str("The alien nods, turns, and starts walking down the tunnel")
+	print_str("Having no other choice, you follow it\n")
+	print_str("As you exit the cave, a massive boulder falls behind you, blocking the way\n")
+	sw $zero, friend	#set friend to true
+	j uranium
+alienShoot:
+	choiceMade
+	print_str("You remember you brought your laser gun just for this purpose\n")
+	print_str("You pull your gun out and shoot the alien right in its dumb alien face\n")
+	print_str("As it lies dying on the ground, you cant help but feel a little bad. Technically it didn't really do anything\n")
+	print_str("You holster your trusty laser gun, feeling a little heavier from the guilt.\n")
+	print_str("You look down at your wrist, but realize the computer must have broken in the fall\n")
+	print_str("Looking behind you, you see a steep climb, but you would return back to the ship empty handed\n")
+	print_str("Having no other choice, you turn and continue down the tunnel\n")
+	print_str("As you exit the cave, a massive boulder falls behind you, blocking the way\n")
+	j uranium
+alienQuiet:
+	choiceMade
+	print_str("You hear smacking noises, followed by low growls\n")
+	print_str("As you continue to sit in the dark, these growls grow bigger and more ferocious. You think there's an alien in the cave with you!\n")
+   alienQuietRet:
+   	jal promptForInput
+	jal getInput
+	la $a1, userInput
+	move $t7, $a1
+	chk_str("op\n",$t7)				#check if user input is "op"
+	beqz $v0, userOptionsAlienQuiet
+   	chk_str("stay quiet\n",$t7)			#stay quiet, the monser kills you
+	beqz $v0, alienhDeath
+	chk_str("run\n",$t7)				#run, the monster kills you
+	beqz $v0, alienrDeath
+	chk_str("turn light on\n",$t7)			#go to alien encounter
+	beqz $v0, alienEncounter
+  	#print_str("Invalid Input\n")
+	j alienQuietRet
+
+uranium:  	
+	choiceMade
+	print_str("You round the corner of the tunnel, and see a pile of uranium packs next to a skeleton.\n")
+	print_str("You suppose the guy before you wasn't too lucky in these caverns\n")	 
+	print_str("You look closer at the packs, but need something to transfer the energy that isn't radioactive\n")
+	lw $t4, hasBattery
+	bltz $t4, noToolsDeath #if the user didn't pick up the battery, dies
+uraniumret:	
+	jal promptForInput
+	jal getInput
+	la $a1, userInput
+	move $t7, $a1
+	chk_str("op\n",$t7)
+	bgezal $v0, userOptionsUranium
+	chk_str("use flashlight\n",$t7)
+	beqz $v0, invalidUranium
+	chk_str("use wrench\n", $t7)
+	beqz $v0, invalidUranium
+	chk_str("use battery\n", $t7)
+	beqz $v0, usedBattery
+	chk_str("use gun\n", $t7)
+	beqz $v0, invalidUranium
+	chk_str("go left",$t7)
+	beqz $v0, wentLeft
+	chk_str("go forward",$t7)
+	beqz $v0, lostTunnelDeath
+	chk_str("go right",$t7)
+	beqz $v0, lostTunnelDeath
+	print_str("Invalid Input\n")
+	j uraniumret	   	   		   	   	
+usedBattery:
+	choiceMade
+	print_str("In your infinite wisdom, you attach your portable battery to the uranium packs, charging it up.\n")
+	print_str("Once your battery is charged, you look around and notice there was a third tunnel\n")
+	sw $zero, batteryCharged #setBattery Charged to true
+	
+   usedBatteryRet:
+   	jal promptForInput
+	jal getInput
+	la $a1, userInput
+	move $t7, $a1
+	chk_str("op\n",$t7)
+	beqz $v0, userOptionsTunnelEnd
+	chk_str("go right\n",$t7)
+	beqz $v0, win
+	chk_str("go left",$t7)
+	beqz $v0, wentLeft
+	chk_str("go forward",$t7)
+	beqz $v0, lostTunnelDeath
+	j usedBatteryRet
+wentLeft:
+	choiceMade
+	print_str("The cave to the left was blocked by a rock that fell from the ceiling\n") 
+	print_str("You return the uranium deposit\n")
+	j usedBatteryRet
+wentRight:
+	choiceMade
+	print_str("Aren't you forgetting something") 
+	j uraniumret
+		   	   	
+### USER TOOL FUNCTIONS ###   	
+flashlightAlreadyOn:
+	choiceMade
+	print_str("The flashlight is already on\n")
+	jr $ra		
+flashlightOn:
+	choiceMade
+	print_str("You turn the flashlight on\n")
+	addi $t8, $zero, 1
+	sw $t8, lightON
+	j enterCaveRet
+cantUWrench:
+	choiceMade
+	print_str("You cannot use the wrench in this situation\n")
+	jr $ra
+cantUFlashlight:
+	choiceMade
+	print_str("Can't use the flashlight here\n")
+	jr $ra
+cantUBattery:
+	choiceMade
+	print_str("You cant use the battery here\n")
+	jr $ra
+cantUGun:
+	choiceMade
+	print_str("There's nothing to shoot at\n")
+	jr $ra	
+	
+	
+## STAY WITH THE SHIP CHOICE ##
+StayShip:
+	choiceMade
+	print_str("You decide its safer to stay in your cozy ship and look around your cabin\n")
+	print_str("You look past the flashing lights and see some tools lying around\n")
+	print_str("* There is a wrench lying on the ground next to a tool bin on the wall\n")
+	print_str("* Under the console is a loose battery pack\n")
+	print_str("* You see in a small footlocker by your feel a flashlight\n")
+	print_str("* and you see your trusty laser pistol in its holder behind your chair\n")
+shipRet:
+	jal promptForInput
+	jal getInput
+	la $a1, userInput	#save the user input
+	move $t7, $a1	
+	chk_str("op\n",$t7)	#check if user input is "op"
+	beqz $v0, userOptions1	
+	chk_str("exit\n",$t7)	#check if user input is "exit"
+	beqz $v0, LeftShip	
+	chk_str("stay\n",$t7)	#check if user input is "stay"
+	beqz $v0, StayShip
+	chk_str("pick up gun\n",$t7)
+	beqz $v0, PickGun	
+	chk_str("pick up wrench\n",$t7)
+	beqz $v0, PickWrench	
+	chk_str("pick up battery\n",$t7)
+	beqz $v0, PickBat
+	chk_str("pick up light\n",$t7)
+	beqz $v0, PickLight
+	jal addCount
+	print_str("Invalid Input\n")
+	j shipRet
+ 	#j exit
+addCount:
+	lw $t2, stayCount	#if the user hits stay for more than 3 times, the user dies
+	beq $t2, 4, stayDeath
+	addi $t2, $t2, 1	
+	sw $t2, stayCount
+	jr $ra
+		
+PickGun:
+	choiceMade
+	lw $t1, hasGun
+	beqz $t1,havegun
+	li $t1, 0 #set hasGun to true
+	sw $t1, hasGun
+	print_str("You pick up the laser gun\n")
+	j shipRet
+    havegun:
+    	print_str("You already have the gun\n")
+	j shipRet
+PickLight:
+	choiceMade
+	lw $t1, hasLight
+	beqz $t1, havelight
+	li $t1, 0 #set hasLight to true
+	sw $t1, hasLight
+	print_str("You pick up the flashlight\n")
+	j shipRet
+   havelight:
+   	print_str("You already have the flashlight\n")
+	j shipRet
+PickBat:
+	choiceMade
+	lw $t1, hasBattery
+	beqz $t1, haveBat
+	li $t1, 0 #set hasBattery to true
+	sw $t1, hasBattery
+	print_str("You pick up the battery\n")
+	j shipRet
+   haveBat:
+   	print_str("You already have the flashlight\n")
+	j shipRet
+PickWrench:
+	choiceMade
+	lw $t1, hasWrench
+	beqz $t1, haveWrench
+	li $t1, 0 #set hasWrench to true
+	sw $t1, hasWrench
+	print_str("You pick up the wrench\n")
+	j shipRet
+   haveWrench:
+   	print_str("You already have the wrench\n")
+	j shipRet
+	
+## User IO Functions
+promptForInput:
+	print_str("-----------------------------------\n")
+	print_str("What do you do? \n")
+	print_str("type 'op' to list your options\n::")
+	jr $ra
+	
+getInput:
+	li $v0,8
+	la $a0,userInput
+	li $a1,24
+	syscall
+	jr $ra
+	
+#### Options Memos
+userOptions:	#First choice
+	print_str("-------OPTIONS-------\n")
+	print_str("exit:		Leave the ship\n")
+	print_str("stay:		Stay in the ship\n")
+	j shipOptions
+	
+userOptions1:	#The user stays with the ship
+	print_str("-------OPTIONS-------\n")
+	print_str("exit:		Leave the ship\n")
+	print_str("stay:		Stay in the ship\n")
+	print_str("pick up wrench:	Pick up the Wrench\n")
+	print_str("pick up battery:	Pick up the Battery\n")
+	print_str("pick up light:	Pick up the Light\n")
+	print_str("pick up gun:		Pick up the Gun\n")
+	j shipRet
+	
+userOptionsC:
+	print_str("-------OPTIONS-------\n")
+	print_str("enter cave:		Enter the Cave\n")
+	print_str("return to ship:	Get Back to the Ship\n")
+	j leftRet
+	
+userOptionsInCave1:
+	print_str("-------OPTIONS-------\n")
+	#Check if the user has any one of the tools, show that as an option
+	print_str("continue: 		Continue Into the Cave\n")
+	print_str("return to ship:	Hightail it Back To the Ship Before Things Get Too Scary\n")
+	lw $t2, hasLight
+	lw $t3, hasGun
+	lw $t4, hasWrench
+	lw $t5, hasBattery
+	bgezal $t2, printlight	#check if each item is true, if so, print out that option
+	bgezal $t3, printgun
+	bgezal $t4, printwrench
+	bgezal $t5, printbatt
+	j enterCaveRet
+	printwrench:
+		print_str("use wrench:		Use the Wrench\n")
+		jr $ra
+	printbatt:
+		print_str("use battery:		Use the battery\n")
+		jr $ra
+	printgun:
+		print_str("use gun:		Fire the Gun\n")
+		jr $ra
+	printlight:
+		print_str("use flashlight:	Use the Flashlight\n")
+		jr $ra
+invalidCave1:
+	choiceMade
+	print_str("You can't use that right now\\n")
+	j enterCaveRet
+userOptionsInCave2:
+	print_str("-------OPTIONS-------\n")
+	#Check if the user has any one of the tools, show that as an option
+	print_str("go left: 		Take the route to the right\n")
+	print_str("go right: 		Take the route to the left\n")
+	lw $t2, hasLight
+	lw $t3, hasGun
+	lw $t4, hasWrench
+	lw $t5, hasBattery
+	bgezal $t2, printlight2	#check if each item is true, if so, print out that option
+	bgezal $t3, printgun2
+	bgezal $t4, printwrench2
+	bgezal $t5, printbatt2
+	j contCaveRet
+	printwrench2:
+		print_str("use wrench:		Use the Wrench\n")
+		jr $ra
+	printbatt2:
+		print_str("use battery:		Use the battery\n")
+		jr $ra
+	printgun2:
+		print_str("use gun:		Fire the Gun\n")
+		jr $ra
+	printlight2:
+		print_str("use flashlight:	Use the Flashlight\n")
+		jr $ra
+invalidCave2:
+	choiceMade
+	print_str("You can't use that right now\n")
+	j contCaveRet
+userOptionsTunnel:
+	print_str("-------OPTIONS-------\n")
+	print_str("slide left:		Take the Path With the Illegiable Sign\n")
+	print_str("slide right:		Take the Path With the Danger Sign\n")
+	print_str("do nothing:		Keep Sliding Forward and Hope Things Work Out\n")
+	j tunnelRet
+userOptionsTunnelRight2:
+	print_str("-------OPTIONS-------\n")
+	print_str("turn flashlight on:	Turn on the Flashlight\n")
+	print_str("sit quietly:		Just sit there and think about things\n")
+	j slideRightRet2
+userOptionsTunnelLeft:
+	print_str("-------OPTIONS-------\n")
+	print_str("run:			try to get through as fast as possible\n")
+	print_str("walk:		try to walk carefully\n")
+	lw $t2, hasLight
+	lw $t3, hasGun
+	lw $t4, hasWrench
+	lw $t5, hasBattery
+	bgezal $t2, printlight3	#check if each item is true, if so, print out that option
+	bgezal $t3, printgun3
+	bgezal $t4, printwrench3
+	bgezal $t5, printbatt3
+	j slideLeftRet
+	printwrench3:
+		print_str("use wrench:		Use the Wrench\n")
+		jr $ra
+	printbatt3:
+		print_str("use battery:		Use the battery\n")
+		jr $ra
+	printgun3:
+		print_str("use gun:		Fire the Gun\n")
+		jr $ra
+	printlight3:
+		print_str("use flashlight:	Use the Flashlight\n")
+		jr $ra
+invalidTunnelLeft:
+	choiceMade
+	print_str("You can't use that right now\n")
+	j slideLeftRet
+userOptionsAlien:
+	print_str("-------OPTIONS-------\n")
+	lw $t2, hasLight
+	lw $t3, hasGun
+	lw $t4, hasWrench
+	lw $t5, hasBattery
+	bgezal $t2, printlighta	#check if each item is true, if so, print out that option
+	bgezal $t3, printguna
+	bgezal $t4, printwrencha
+	bgezal $t5, printbatta
+	print_str("talk: 		Say Hi\n")
+	print_str("run:			Make a break for it\n")
+	j alienEncounterRet
+	printwrencha:
+		print_str("use wrench:		Use the Wrench\n")
+		jr $ra
+	printbatta:
+		print_str("use battery:		Use the battery\n")
+		jr $ra
+	printguna:
+		print_str("use gun:		Fire the Gun\n")
+		jr $ra
+	printlighta:
+		print_str("use flashlight:	Use the Flashlight\n")
+		jr $ra
+invalidAlien:
+	choiceMade
+	print_str("You can't use that right now\n")
+	j alienEncounterRet
+userOptionsAlienQuiet:
+	print_str("-------OPTIONS-------\n")
+	print_str("stay quiet:		See if the 'alien' might not find you\n")
+	print_str("turn light on:	See what's what\n")
+	print_str("run:			Run as fast as you can\n")
+	j alienQuietRet
+	
+userOptionsUranium:
+	print_str("-------OPTIONS-------\n")
+	lw $t2, hasLight
+	lw $t3, hasGun
+	lw $t4, hasWrench
+	lw $t5, hasBattery
+	bgezal $t2, printlightu	#check if each item is true, if so, print out that option
+	bgezal $t3, printgunu
+	bgezal $t4, printwrenchu
+	bgezal $t5, printbattu
+	print_str("go left:		Go into the tunnel with the skull at the top\n")
+	print_str("go right:		Go into the other tunnel\n")
+	print_str("go forward:		Go into the unknown tunnel\n")
+	j uraniumret
+	printwrenchu:
+		print_str("use wrench:		Use the Wrench\n")
+		jr $ra
+	printbattu:
+		print_str("use battery:		Use the battery\n")
+		jr $ra
+	printgunu:
+		print_str("use gun:		Fire the Gun\n")
+		jr $ra
+	printlightu:
+		print_str("use flashlight:	Use the Flashlight\n")
+		jr $ra
+	print_str("\n")
+invalidUranium:
+	choiceMade
+	print_str("You can't use that right now\n")
+	j uraniumret
+userOptionsTunnelEnd:
+	print_str("-------OPTIONS-------\n")
+	print_str("go left:		Go into the tunnel with the skull at the top\n")
+	print_str("go right:		Go into the other tunnel\n")
+	print_str("go forward:		Go into the unknown tunnel\n")
+	j usedBatteryRet
+	
+#### Death Conditions
+trapcaveDeath:
+	choiceMade
+	print_str("You decide its worth exploring the room to the left. What could possible go wrong?\n")
+	print_str("You approach the room, as you get closer you become increasingly certain that its gold, just sitting there\n")
+	print_str("While you're staring at the gold, you miss the pressure plates under your feet\n")
+	print_str("Suddenly, the ground opens up underneath you. The last thing you see is the gold getting further and further away as you fall to your demise\n")
+	j tryAgain
+stayDeath:
+	choiceMade
+	print_str("After sitting in the ship, the radioactive storm finally reaches you. You were unable to fix the ship, and die from radioactive exposure\n")
+	j tryAgain
+slipDeath:
+	choiceMade
+	print_str("You have a tough time seeing anything, as you wander through the darkness. The floor of the cave is slippery\n")
+	print_str("You lose your balance and fall to the ground with a thud. A stalagtite clinging to the roof of the cave gets disloged and falls\n")
+	print_str("It cuts through the outer layer of the suit, leading the poisonous air to come flowing in \n")
+	print_str("The world goes dark as you slip into unconsciousness\n")
+	j tryAgain
+slideDeath:
+	choiceMade
+	print_str("You panic and hope that you're not sliding fast enough to get seriously hurt if you just do nothing\n")
+	print_str("You're wrong. You crash into the wall, and die immediately\n")
+	j tryAgain
+alienwDeath:	#die after hitting alien with wrench
+	choiceMade
+	print_str("You try to hit the alien on the head with your trusty wrench. It bounces right off the alien's thick skull\n")
+	print_str("It rears its head back angrily\n")
+	print_str("It opens its massive jaws and bites your head clean off, you'll make a good snack\n")
+	j tryAgain
+alienhDeath:	#die after hiding from alien
+	choiceMade
+	print_str("You sit in the dark for a while, you hear sniffing, followed by low grumbles\n")
+	print_str("The alien has the ability to see in the dark, it can sense your presence, and proceeds to kill you quickly for a light snack\n")
+	j tryAgain
+alienrDeath:	#die after trying to run from alien
+	choiceMade
+	print_str("You decide whatever it is, you're now interested in interacting with it in any way\n")
+	print_str("You drop your flashlight and start sprinting as fast as you can\n")
+	print_str("You hear a loud screech, behind you, and thudding noises like an animal sprinting in your direction\n")
+	print_str("You run faster, but its hard to see because you dropped your flashlight, you trip and fall, the monster pounces, and bites your head off\n")
+	j tryAgain
+runDeath:
+	choiceMade
+	print_str("You choose to try and avoid the falling rocks by sprinting through the cavern\n")
+	print_str("As you run you stumble over a rock and fall. You've broken your ankle. \n")
+	print_str("The earth continues to shake and a large rock is dislodged from the ceiling, crashing on to your head\n")
+	j tryAgain
+noToolsDeath:
+	choiceMade
+	print_str("You realize that you forgot to bring the right tools.\n")
+	print_str("You suddenly remember that you left your tools in the ship.\n")
+	print_str("You begin running back through the tunnels to the ship but the storm catches you before you can get there.\n")
+	print_str("The radioactivity makes you feel queazy, collapse, the last thing you see is the purple storm sliding into the distance\n")
+	j tryAgain
+lostTunnelDeath:
+	choiceMade
+	print_str("You continue to wander in the tunnels\n")
+	print_str("You find yourself hopelessly lost, and can't escape\n")
+	j tryAgain
+winEnd:
+	choiceMade
+	print_str("You make it back to the ship just in time. You plug the charged battery back into the ship and climb into the cockpit\n")
+	print_str("You turn the ignition key, and hear the engine starting up\n")
+	print_str("You take off and blast into the atmosphere, ready for your next adventure\n")
+	j win
+#### End Game
+tryAgain:
+	choiceMade
+	print_str("Would you like to try again? (y/n)\n")
+	jal getInput
+	la $a1, userInput	#save the user input
+	move $t7, $a1	
+	chk_str("y\n",$t7)
+	beqz $v0, ytryAgain
+ytryAgain:
+	jal resetValues
+	print_str("------------------\n")
+	j main
+ntryAgain:
+	print_str("Thanks for playing Space Adventure!\n")
+	j exit
+win:
+	print_win
+	j tryAgain
+resetValues:
+	addi $t9, $zero, -1
+	sw $t9, hasLight
+	sw $t9, hasGun
+	sw $t9, hasBattery
+	sw $t9, lightON
+	sw $t9, friend
+	sw $t9, batteryCharged
+	sw $zero, stayCount
+	jr $ra
+	
+exit: 	li $v0, 10
+	syscall
