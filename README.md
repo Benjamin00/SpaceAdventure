@@ -8,3 +8,7 @@ In order to run the program, you need to have the “SpaceAdventure” and “ma
 Any step you take, you can prompt the program for a list of options by typing “op” into the input.
 
 This program has built in error checking. If you type in an incorrect input it will simply ask you to put in a correct one. The input checking is case sensitive. See Image 
+
+![Intro Screen](https://user-images.githubusercontent.com/8885471/54167187-7a29e700-4436-11e9-855f-05d90d698aba.png)
+
+![Monster Screen](https://user-images.githubusercontent.com/8885471/54167259-e573b900-4436-11e9-8b4b-93708fff47db.png)
