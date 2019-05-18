@@ -1,5 +1,5 @@
 # SpaceAdventure
-A choose your own adventure game made for MIPS, to be run on MARS simulator
+A choose your own adventure game made with MIPS/Assembly, to be run on MARS simulator
 This program tells the story of you, an astronaut whose ship has crash landed on a foreign planet with a radioactive storm brewing on the horizon.  You must find a power source to restart your ship. You are presented with many options along the way, most will lead to your death, but you might win. 
 
 How to Run the Program:
